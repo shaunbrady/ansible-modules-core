@@ -518,6 +518,11 @@ def delete_autoscaling_group(connection, module):
         group.min_size = 0
         group.desired_capacity = 0
         group.update()
+        # Instances with lifecycle_state of 'Standby' are not impacted by
+        # desired_capacity/max_size = 0, and therefore won't be deleted.
+        for inst in group.instances:
+            if inst.lifecycle_state == 'Standby':
+                connection.terminate_instance(inst.instance_id)
         instances = True
         while instances:
             tmp_groups = connection.get_all_groups(names=[group_name])
